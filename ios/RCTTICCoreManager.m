@@ -1,17 +1,24 @@
 #import "RCTTICCoreManager.h"
 #import <UIKit/UIKit.h>
-#import <MapKit/MapKit.h>
 #import <React/RCTLog.h>
 #import <CoreGraphics/CGBase.h>
+#import <Masonry/Masonry.h>
+
 @interface RCTTICCoreManager ()
-  @property (nonatomic, assign) int sdkAppId;
+  @property (nonatomic, assign) NSString* sdkToken;
   @property (nonatomic, strong) id delegate;
+@property (nonatomic, strong) NSNumber* width;
+  @property (nonatomic, strong) NSNumber *height;
   @property (nonatomic, strong) NSString *groupId;
   @property (nonatomic, strong) NSString *userId;
   @property (nonatomic, strong) NSString *userSig;
-  @property (nonatomic, strong) TEduBoardController *boardController;
-  @property (nonatomic, strong) UIView *boardView;
   @property (nonatomic, strong) UIView *imController;
+  @property (nonatomic, strong) WhiteBoardView *boardView;
+  @property (nonatomic, strong) UIView *boardView111;
+  @property (nonatomic, strong) WhiteSDK *sdk;
+  @property (nonatomic, strong) WhiteRoom *room;
+  #pragma mark - CallbackDelegate
+  @property (nonatomic, weak, nullable) id<WhiteCommonCallbackDelegate> commonDelegate;
 @end
 
 @implementation RCTTICCoreManager
@@ -26,107 +33,78 @@
     });
     return instance;
 }
-- (void) initEngine: (int)sdkAppId delegate:(id)delegate{
-  _sdkAppId= sdkAppId;
-  _delegate = delegate;
-}
-- (void) joinChannel: (NSString *)classId userId:(NSString *)userId userSig:(NSString *)userSig {
-  dispatch_sync(dispatch_get_main_queue(), ^{
-    _userId = userId;
-    _userSig = userSig;
-    _groupId = classId;
-    [self initIMM: classId userId:userId userSig:userSig];
-  });
-}
-- (void) joinChannelReal: (NSString *)classId userId:(NSString *)userId userSig:(NSString *)userSig {
-  TEduBoardAuthParam *authParam = [[TEduBoardAuthParam alloc] init];
-  authParam.sdkAppId = _sdkAppId;
-  authParam.userId = _userId;
-  authParam.userSig = _userSig;
-  RCTLogInfo(@"成功到最后一步");
-  TEduBoardInitParam *initParam = [[TEduBoardInitParam alloc] init];
-  _boardController = [[TEduBoardController alloc] initWithAuthParam:authParam roomId:[classId integerValue] initParam:initParam];
-  [_boardController addDelegate: self];
-}
-- (void) initIMM: (NSString *)classId userId:(NSString *)userId userSig:(NSString *)userSig  {
-  TIMSdkConfig *config = [[TIMSdkConfig alloc] init];
-  config.sdkAppId = _sdkAppId;
-  [[TIMManager sharedInstance] initSdk:config];
-  TIMLoginParam *loginParam = [TIMLoginParam new];
-  loginParam.identifier = userId;
-  loginParam.userSig = userSig;
-  loginParam.appidAt3rd = [@(_sdkAppId) stringValue];
-  RCTTICCoreManager *ws = self;
-  [[TIMManager sharedInstance] login:loginParam succ:^{
-    TIMCreateGroupInfo *groupInfo = [[TIMCreateGroupInfo alloc] init];
-    groupInfo.group = classId;
-    groupInfo.groupName = classId;
-    groupInfo.groupType = @"Public";
-    groupInfo.setAddOpt = YES;
-    groupInfo.addOpt = TIM_GROUP_ADD_ANY;
-    [[TIMGroupManager sharedInstance] createGroup:groupInfo succ:^(NSString *classId) {
-      // 创建 IM 群组成功
-      [[TIMGroupManager sharedInstance] joinGroup: classId msg:nil succ:^{
-        // 加入 IM 群组成功
-        // 此时可以调用白板初始化接口创建白板
-//        RCTLogInfo(@"成功到最后一11");
-        [ws joinChannelReal: classId userId:userId userSig:userSig];
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
 
-      } fail:^(int code, NSString *msg) {
-        // 加入 IM 群组失败
-        if(code == 10013){
-          [ws joinChannelReal: classId userId:userId userSig:userSig];
-        }
-      }];
-    } fail:^(int code, NSString *msg) {
-      // 创建 IM 群组失败
-      [[TIMGroupManager sharedInstance] joinGroup: classId msg:nil succ:^{
-        // 加入 IM 群组成功
-        // 此时可以调用白板初始化接口创建白板
-        [ws joinChannelReal: classId userId:userId userSig:userSig];
-      } fail:^(int code, NSString *msg) {
-        // 加入 IM 群组失败
-        if(code == 10013){
-          [ws joinChannelReal: classId userId:userId userSig:userSig];
-        }
-      }];
-    }];  
-  } fail:^(int code, NSString *msg) {
-    // 登录 IMSDK 失败
-  }];
+//    [self.boardView mas_makeConstraints:^(MASConstraintMaker *make) {
+//      make.top.equalTo(self.mas_topLayoutGuideBottom);
+//      make.left.bottom.right.equalTo(self.view);
+//    }];
+
+
 }
-- (void)onTEBInit
-{
-  // 赋值白板，别处通过单例获取这个白板
-  _boardView = [_boardController getBoardRenderView];
-  [_delegate performSelector:@selector(viewReady)];
+- (void) initEngine: (NSString *)identifier info:(NSDictionary *)info delegate:(id)delegate{
+    dispatch_sync(dispatch_get_main_queue(), ^{
+        self.boardView = [[WhiteBoardView alloc] init];
+        CGFloat width = [RCTConvert CGFloat: [info objectForKey:@"width"]];
+        CGFloat height = [RCTConvert CGFloat: [info objectForKey:@"height"]];
+        self.view.frame = CGRectMake(0, 0, width, height);
+        self.boardView.frame = CGRectMake(0, 0, width, height);
+        [self.view addSubview:self.boardView ];
+      WhiteSdkConfiguration *config = [[WhiteSdkConfiguration alloc] initWithApp:identifier];
+      self.sdk = [[WhiteSDK alloc] initWithWhiteBoardView:self.boardView config:config commonCallbackDelegate:self];
+      _delegate = delegate;
+    });
 }
-- (TEduBoardController *)getBoardController
-{
-    return _boardController;
-}
-// 解散群组
-- (void) dismissGroup {
+- (void) joinRoom: (NSString *)roomUuid roomToken:(NSString *)roomToken{
+  // 加入房间
+    RCTLogInfo(@"roomUuid加入房间: %d", roomUuid);
   dispatch_sync(dispatch_get_main_queue(), ^{
-    [[V2TIMManager sharedInstance] dismissGroup:_groupId succ:^{
-      // 解散 IM 群组成功
-      RCTLogInfo(@"成功");
-    } fail:^(int code, NSString *msg) {
-      // 解散 IM 群组失败
-      RCTLogInfo(@"失败原因: %@", msg);
-    }];
+      WhiteRoomConfig *roomConfig = [[WhiteRoomConfig alloc] initWithUuid:roomUuid roomToken:roomToken];
+      
+
+      [self.sdk joinRoomWithConfig:roomConfig callbacks:self completionHandler:^(BOOL success, WhiteRoom * _Nonnull room, NSError * _Nonnull error) {
+          if (success) {
+            self.room = room;
+            // 在这里给个回调
+            // 允许序列化才能使用 undo redo
+              RCTLogInfo(@"roomUuid加入房间成功");
+            [self.room disableSerialization:NO];
+              NSDictionary *body =@{@"type": @"JoinRoomSuccess"};
+              [self->_delegate performSelector:@selector(JoinRoomCallback:) withObject:body];
+
+          } else {
+              // 错误处理
+            // 在这里给个回调
+              RCTLogInfo(@"roomUuid加入房间失败 %@", error);
+              NSDictionary *body =@{@"type": @"JoinRoomError", @"msg": error};
+              [self->_delegate performSelector:@selector(JoinRoomCallback:) withObject:body];
+          }
+      }];
   });
-//  [TIMManager sharedInstance];
-//  [[TIMManager sharedInstance] dismissGroup: _groupId];
 }
-- (void) addListener: (NSString *) name callback:(RCTResponseSenderBlock)callback {
-  
+- (void)setViewMode: (NSString *) mode{
+    if ([mode isEqualToString:@"freedom"]) {
+        [self.room setViewMode:WhiteViewModeFreedom];
+    } else if ([mode isEqualToString:@"follower"]) {
+        [self.room setViewMode:WhiteViewModeFollower];
+    } else if ([mode isEqualToString:@"broadcaster"]) {
+        [self.room setViewMode:WhiteViewModeBroadcaster];
+    }
 }
+- (UIView *)getBoardController
+{
+    return self.view;
+}
+
+
 // 释放引擎
 - (void) unInitEngine {
   dispatch_sync(dispatch_get_main_queue(), ^{
-    [[TIMManager sharedInstance] unInit];
-    [_boardController unInit];
+//    [[TIMManager sharedInstance] unInit];
+//    [_boardController unInit];
+      [self.view removeReactSubview:self.boardView];
   });
 }
 - (void) callMethod: (NSString *) methodName params:(NSMutableDictionary *) params {
@@ -134,42 +112,69 @@
   dispatch_sync(dispatch_get_main_queue(), ^{
     if ([methodName isEqualToString:@"setToolType"]) {
       // 设置白板工具, 这里包含直线，随意曲线，椭圆,方形, 鼠标等
-      [_boardController setToolType : [RCTConvert int: [params objectForKey:@"type"]]];
+      WhiteMemberState *memberState = [[WhiteMemberState alloc] init];
+      //白板初始状态时，教具默认为 pencil
+        RCTLogInfo(@"设置的数字then %@", [params objectForKey:@"type"]);
+      memberState.currentApplianceName = [params objectForKey:@"type"];
+
+
+      [_room setMemberState:memberState];
     } else if ([methodName isEqualToString:@"clearBackground"]) {
       // 清空选中或者全屏
-      [_boardController clearBackground : [RCTConvert BOOL:[params objectForKey:@"background"]] andSelected:[RCTConvert BOOL: [params objectForKey:@"selected"]]];
+        
+      [_room cleanScene:  [RCTConvert BOOL:[params objectForKey:@"retainPPT"]]];
     } else if ([methodName isEqualToString:@"setBrushColor"]) {
       // 设置刷子颜色
       NSArray *color = [params objectForKey:@"color"];
-      [_boardController setBrushColor : [UIColor colorWithRed:[[color objectAtIndex: 0] integerValue]/255.0
-                                                        green:[[color objectAtIndex: 1] integerValue]/255.0
-                                                        blue:[[color objectAtIndex: 2] integerValue]/255.0
-                                                        alpha:[[color objectAtIndex: 3] integerValue]]];
+//        color = [RCTConvert NSArray: color];
+//        RCTLogInfo(@"rocolorcolorcolor %@", color);
+//        RCTLogInfo(@"打印的colr %@", @[@18, @18]);
+      WhiteMemberState *memberState = [[WhiteMemberState alloc] init];
+      //白板初始状态时，教具默认为 pencil
+        memberState.strokeColor = color;
+      [_room setMemberState:memberState];
     } else if ([methodName isEqualToString:@"setBrushThin"]) {
       // 设置刷子粗细
-      [_boardController setBrushThin : [RCTConvert float: [params objectForKey:@"thin"]]];
+        RCTLogInfo(@"设置的数字then %d",  [RCTConvert NSNumber: [params objectForKey:@"thin"]]);
+      WhiteMemberState *memberState = [[WhiteMemberState alloc] init];
+      //白板初始状态时，教具默认为 pencil
+        
+      memberState.strokeWidth = [RCTConvert NSNumber: [params objectForKey:@"thin"]];
+      [_room setMemberState:memberState];
     } else if ([methodName isEqualToString:@"setTextColor"]) {
       // 设置文本颜色
       NSArray *color = [params objectForKey:@"color"];
-      [_boardController setTextColor : [UIColor colorWithRed:[[color objectAtIndex: 0] integerValue]/255.0
-                                                        green:[[color objectAtIndex: 1] integerValue]/255.0
-                                                        blue:[[color objectAtIndex: 2] integerValue]/255.0
-                                                        alpha:[[color objectAtIndex: 3] integerValue]]];
+      WhiteMemberState *memberState = [[WhiteMemberState alloc] init];
+      //白板初始状态时，教具默认为 pencil
+      memberState.strokeColor = color;
+      [_room setMemberState:memberState];
     } else if ([methodName isEqualToString:@"setTextSize"]) {
       // 设置字体大小
-      [_boardController setTextSize : [RCTConvert int: [params objectForKey:@"size"]]];
+      WhiteMemberState *memberState = [[WhiteMemberState alloc] init];
+      //白板初始状态时，教具默认为 pencil
+      memberState.textSize = [RCTConvert NSNumber: [params objectForKey:@"size"]];
+      [_room setMemberState:memberState];
     } else if ([methodName isEqualToString:@"undo"]) {
       // 撤销
-      [_boardController undo];
+      [_room undo];
     } else if ([methodName isEqualToString:@"redo"]) {
       // 重做
-      [_boardController redo];
-    } else if ([methodName isEqualToString:@"addElement"]) {
-      // 添加元素
-      [_boardController addElement :  [RCTConvert NSString: [params objectForKey:@"url"]] type: [RCTConvert int: [params objectForKey:@"type"]]];
+      [_room redo];
+    } else if ([methodName isEqualToString:@"insertImage"]) {
+      WhiteImageInformation *info = [[WhiteImageInformation alloc] init];
+      info.width = [RCTConvert CGFloat: [params objectForKey:@"width"]];
+      info.height = [RCTConvert CGFloat: [params objectForKey:@"height"]];
+      info.uuid = [RCTConvert NSString: [params objectForKey:@"uuid"]];
+      [self.room insertImage:info src:[RCTConvert NSString: [params objectForKey:@"src"]]];
     } else if ([methodName isEqualToString:@"setDrawEnable"]) {
       // 是否允许涂鸦
-      [_boardController setDrawEnable: [RCTConvert BOOL:[params objectForKey:@"enable"]]];
+//      [_boardController setDrawEnable: [RCTConvert BOOL:[params objectForKey:@"enable"]]];
+    } else if ([methodName isEqualToString:@"setBackGround"]){
+        NSArray *color = [params objectForKey:@"color"];
+        [_room setBackgroundColor : [UIColor colorWithRed:[[color objectAtIndex: 0] integerValue]/255.0
+                                                          green:[[color objectAtIndex: 1] integerValue]/255.0
+                                                          blue:[[color objectAtIndex: 2] integerValue]/255.0
+                                                          alpha:[[color objectAtIndex: 3] integerValue]]];
     }
   });
 }

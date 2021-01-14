@@ -1,7 +1,7 @@
 {
-  "name": "react-native-tx-education",
-  "version": "1.0.2",
-  "description": "腾讯白板, IM通讯",
+  "name": "react-native-netless",
+  "version": "1.0.0",
+  "description": "netless RN封装",
   "author": "kzy",
   "license": "MIT",
   "source": "src/index",
@@ -12,5 +12,5 @@
     "react native",
     "ios"
   ],
-  "homepage": "https://github.com/kzyman/react-native-tx-education"
+  "homepage": "https://github.com/kzyman/react-native-netless"
 }
