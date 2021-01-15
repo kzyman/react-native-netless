@@ -136,13 +136,15 @@ class WhiteBoardEngine {
      * 撤销操作
      */
     async undo() {
-        return await TICBridgeManager.callMethod('undo');
+        console.log('调用了没undo')
+        return await TICBridgeManager.callMethod('undo', {});
     }
     /**
      * 重做操作
      */
     async redo() {
-        return await TICBridgeManager.callMethod('redo');
+        console.log('调用了没redo')
+        return await TICBridgeManager.callMethod('redo', {});
     }
     /**
      * 插入图片
@@ -185,6 +187,20 @@ class WhiteBoardEngine {
      */
     async setViewMode(mode) {
         return await TICBridgeManager.setViewMode(mode);
+    }
+    /**
+     * 禁用启用教具
+     * @param {bool} disable 
+     */
+    async disableDeviceInputs(disable) {
+        return await TICBridgeManager.callMethod('disableDeviceInputs', { disable });
+    }
+    /**
+     * 禁用启用所有手势
+     * @param {bool} readonly 
+     */
+    async disableOperations(readonly) {
+        return await TICBridgeManager.callMethod('disableOperations', { readonly });
     }
 }
 export default new WhiteBoardEngine();

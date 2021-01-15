@@ -2,8 +2,6 @@
 #import <UIKit/UIKit.h>
 #import <React/RCTLog.h>
 #import <CoreGraphics/CGBase.h>
-#import <Masonry/Masonry.h>
-
 @interface RCTTICCoreManager ()
   @property (nonatomic, assign) NSString* sdkToken;
   @property (nonatomic, strong) id delegate;
@@ -35,9 +33,7 @@
 }
 - (void)viewDidLoad {
     [super viewDidLoad];
-    
-
-//    [self.boardView mas_makeConstraints:^(MASConstraintMaker *make) {
+    //    [self.boardView mas_makeConstraints:^(MASConstraintMaker *make) {
 //      make.top.equalTo(self.mas_topLayoutGuideBottom);
 //      make.left.bottom.right.equalTo(self.view);
 //    }];
@@ -93,6 +89,9 @@
         [self.room setViewMode:WhiteViewModeBroadcaster];
     }
 }
+- (void)disableDeviceInputs: (BOOL *) enable{
+    [self.room disableDeviceInputs: enable];
+}
 - (UIView *)getBoardController
 {
     return self.view;
@@ -121,8 +120,8 @@
       [_room setMemberState:memberState];
     } else if ([methodName isEqualToString:@"clearBackground"]) {
       // 清空选中或者全屏
-        
-      [_room cleanScene:  [RCTConvert BOOL:[params objectForKey:@"retainPPT"]]];
+        [_room deleteOpertion];
+//      [_room cleanScene:  [RCTConvert BOOL:[params objectForKey:@"retainPPT"]]];
     } else if ([methodName isEqualToString:@"setBrushColor"]) {
       // 设置刷子颜色
       NSArray *color = [params objectForKey:@"color"];
@@ -175,6 +174,12 @@
                                                           green:[[color objectAtIndex: 1] integerValue]/255.0
                                                           blue:[[color objectAtIndex: 2] integerValue]/255.0
                                                           alpha:[[color objectAtIndex: 3] integerValue]]];
+    } else if ([methodName isEqualToString:@"disableDeviceInputs"]) {
+        //禁用启用教具
+        [_room disableDeviceInputs:  [RCTConvert BOOL:[params objectForKey:@"disable"]]];
+    } else if ([methodName isEqualToString:@"disableOperations"]) {
+        //禁用启用教具
+        [_room disableOperations:  [RCTConvert BOOL:[params objectForKey:@"readonly"]]];
     }
   });
 }
