@@ -20,10 +20,10 @@ class WhiteBoardEngine {
      * @param {string} name - 监听的名字 目前只支持 BorderviewReady, joinRoomSuccess, joinRoomError
      * @param {function} callback - 回调函数
      */
-    removeAllListener (){
-        const keys = ['BorderviewReady', 'joinRoomSuccess', 'joinRoomError']
+    removeAllListener() {
+        const keys = ['BorderviewReady', 'joinRoomSuccess', 'joinRoomError'];
         for (const key of keys) {
-            RtcEngineEvent.removeAllListeners(key);   
+            RtcEngineEvent.removeAllListeners(key);
         }
     }
     /**
@@ -136,14 +136,14 @@ class WhiteBoardEngine {
      * 撤销操作
      */
     async undo() {
-        console.log('调用了没undo')
+        console.log('调用了没undo');
         return await TICBridgeManager.callMethod('undo', {});
     }
     /**
      * 重做操作
      */
     async redo() {
-        console.log('调用了没redo')
+        console.log('调用了没redo');
         return await TICBridgeManager.callMethod('redo', {});
     }
     /**
@@ -154,7 +154,8 @@ class WhiteBoardEngine {
      * @param {number} info.height - 元素类型，当设置 TEDU_BOARD_ELEMENT_IMAGE 时，等价于 addImageElement 方法
      */
     async insertImage(info) {
-        return await TICBridgeManager.insertImage('insertImage', info);
+        info.uuid = info.name + Math.random();
+        return await TICBridgeManager.callMethod('insertImage', info);
     }
     /**
      * 是否允许远端涂鸦
@@ -170,12 +171,12 @@ class WhiteBoardEngine {
      */
     async setBackGround(color) {
         color = color
-        .replace('rgba(', '')
-        .replace(')', '')
-        .split(',')
-        .map(i => {
-            return parseInt(i);
-        });
+            .replace('rgba(', '')
+            .replace(')', '')
+            .split(',')
+            .map(i => {
+                return parseInt(i);
+            });
         return await TICBridgeManager.callMethod('setBackGround', { color });
     }
     /**
@@ -183,21 +184,21 @@ class WhiteBoardEngine {
      * freedom 代表自由模式, 默认模式
      * follower 代表追随模式
      * broadcaster 代表主播模式, 有一个人设置了主播模式,其他人都会变成追随者
-     * @param {string} mode 
+     * @param {string} mode
      */
     async setViewMode(mode) {
         return await TICBridgeManager.setViewMode(mode);
     }
     /**
      * 禁用启用教具
-     * @param {bool} disable 
+     * @param {bool} disable
      */
     async disableDeviceInputs(disable) {
         return await TICBridgeManager.callMethod('disableDeviceInputs', { disable });
     }
     /**
      * 禁用启用所有手势
-     * @param {bool} readonly 
+     * @param {bool} readonly
      */
     async disableOperations(readonly) {
         return await TICBridgeManager.callMethod('disableOperations', { readonly });
