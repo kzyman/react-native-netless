@@ -2,10 +2,10 @@
 #import <UIKit/UIKit.h>
 #import <React/RCTLog.h>
 #import <CoreGraphics/CGBase.h>
-@interface RCTTICCoreManager ()
+@interface RCTTICCoreManager ()<WhiteRoomCallbackDelegate>
   @property (nonatomic, assign) NSString* sdkToken;
   @property (nonatomic, strong) id delegate;
-@property (nonatomic, strong) NSNumber* width;
+    @property (nonatomic, strong) NSNumber* width;
   @property (nonatomic, strong) NSNumber *height;
   @property (nonatomic, strong) NSString *groupId;
   @property (nonatomic, strong) NSString *userId;
@@ -67,19 +67,31 @@
             // 允许序列化才能使用 undo redo
               RCTLogInfo(@"roomUuid加入房间成功");
             [self.room disableSerialization:NO];
-              NSDictionary *body =@{@"type": @"JoinRoomSuccess"};
+              NSDictionary *body =@{@"type": @"joinRoomSuccess"};
               [self->_delegate performSelector:@selector(JoinRoomCallback:) withObject:body];
 
           } else {
               // 错误处理
             // 在这里给个回调
               RCTLogInfo(@"roomUuid加入房间失败 %@", error);
-              NSDictionary *body =@{@"type": @"JoinRoomError", @"msg": error};
+              NSDictionary *body =@{@"type": @"joinRoomError", @"msg": error};
               [self->_delegate performSelector:@selector(JoinRoomCallback:) withObject:body];
           }
       }];
   });
 }
+
+
+- (void) leaveRoom {
+  // 加入房间
+    dispatch_sync(dispatch_get_main_queue(), ^{
+      [self.room disconnect:^{
+          //断连成功
+           RCTLogInfo(@"成功退出白板房间");
+      }];    
+    });
+}
+
 - (void)setViewMode: (NSString *) mode{
     if ([mode isEqualToString:@"freedom"]) {
         [self.room setViewMode:WhiteViewModeFreedom];
@@ -103,6 +115,7 @@
   dispatch_sync(dispatch_get_main_queue(), ^{
 //    [[TIMManager sharedInstance] unInit];
 //    [_boardController unInit];
+
       [self.view removeReactSubview:self.boardView];
   });
 }
@@ -160,11 +173,18 @@
       // 重做
       [_room redo];
     } else if ([methodName isEqualToString:@"insertImage"]) {
-      WhiteImageInformation *info = [[WhiteImageInformation alloc] init];
-      info.width = [RCTConvert CGFloat: [params objectForKey:@"width"]];
-      info.height = [RCTConvert CGFloat: [params objectForKey:@"height"]];
-      info.uuid = [RCTConvert NSString: [params objectForKey:@"uuid"]];
-      [self.room insertImage:info src:[RCTConvert NSString: [params objectForKey:@"src"]]];
+        [self.room getRoomStateWithResult:^(WhiteRoomState * _Nonnull state) {
+            
+            WhiteImageInformation *info = [[WhiteImageInformation alloc] init];
+            info.width = [RCTConvert CGFloat: [params objectForKey:@"width"]];
+            info.height = [RCTConvert CGFloat: [params objectForKey:@"height"]];
+            info.uuid = [RCTConvert NSString: [params objectForKey:@"uuid"]];
+            info.centerX =  [RCTConvert CGFloat: state.cameraState.centerX];
+            info.centerY =  [RCTConvert CGFloat: state.cameraState.centerY];
+            [self.room insertImage:info src:[RCTConvert NSString: [params objectForKey:@"src"]]];
+        }];
+//        WhiteCameraBound *bound = [WhiteCameraBound defaultMinContentModeScale:0.5 maxContentModeScale:3];
+//        [self.room setCameraBound:bound];
     } else if ([methodName isEqualToString:@"setDrawEnable"]) {
       // 是否允许涂鸦
 //      [_boardController setDrawEnable: [RCTConvert BOOL:[params objectForKey:@"enable"]]];
@@ -183,5 +203,9 @@
     }
   });
 }
+// 房间状态变化的回调
+- (void)fireRoomStateChanged:(WhiteRoomState *)modifyState {
+    RCTLogInfo(@"房间状态的变化 %@",modifyState);
+};
 @end
 

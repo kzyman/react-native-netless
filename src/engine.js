@@ -7,7 +7,7 @@ class WhiteBoardEngine {
     constructor() {}
     /**
      * 监听函数
-     * @param {string} name - 监听的名字 目前只支持 BorderviewReady, joinRoomSuccess, joinRoomError
+     * @param {string} name - 监听的名字 目前只支持 borderviewReady, joinRoomSuccess, joinRoomError
      * @param {function} callback - 回调函数
      */
     addListener(name, callback) {
@@ -17,11 +17,11 @@ class WhiteBoardEngine {
     }
     /**
      * 清空全部监听函数
-     * @param {string} name - 监听的名字 目前只支持 BorderviewReady, joinRoomSuccess, joinRoomError
+     * @param {string} name - 监听的名字 目前只支持 borderviewReady, joinRoomSuccess, joinRoomError
      * @param {function} callback - 回调函数
      */
     removeAllListener() {
-        const keys = ['BorderviewReady', 'joinRoomSuccess', 'joinRoomError'];
+        const keys = ['borderviewReady', 'joinRoomSuccess', 'joinRoomError'];
         for (const key of keys) {
             RtcEngineEvent.removeAllListeners(key);
         }

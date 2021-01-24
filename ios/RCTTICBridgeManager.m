@@ -25,7 +25,13 @@ RCT_EXPORT_METHOD(joinRoom:(NSString *)roomUuid roomToken:(NSString *)roomToken 
   resolve(@"1");
 
 }
+RCT_EXPORT_METHOD(leaveRoom:(RCTPromiseResolveBlock) resolve reject:(RCTPromiseRejectBlock) reject)
+{
+  // 退出频道里面
+ [[RCTTICCoreManager sharedInstance] leaveRoom];
+  resolve(@"1");
 
+}
 // 方法调用
 RCT_EXPORT_METHOD(callMethod:
                   (NSString *) methodName params:(NSDictionary *) params resolve:(RCTPromiseResolveBlock) resolve reject:(RCTPromiseRejectBlock) reject)
@@ -57,12 +63,12 @@ RCT_EXPORT_METHOD(unInitEngine  :(RCTPromiseResolveBlock) resolve reject:(RCTPro
 #pragma mark - listener
 - (NSArray<NSString *> *)supportedEvents
 {
-  return @[@"BorderviewReady", @"JoinRoomSuccess", @"JoinRoomError"];
+  return @[@"borderviewReady", @"joinRoomSuccess", @"joinRoomError"];
 }
 
 - (void)viewReady
 {
-  [self sendEventWithName:@"BorderviewReady" body:@{}];
+  [self sendEventWithName:@"borderviewReady" body:@{}];
 }
 - (void)JoinRoomCallback: (NSDictionary *) body
 {

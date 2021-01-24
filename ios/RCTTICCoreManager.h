@@ -14,6 +14,7 @@
 - (void) initEngine: (NSString *)identifier info:(NSDictionary *)info delegate:(id)delegate;
 - (void) setViewMode:(NSString *) mode;
 - (void) joinRoom: (NSString *)roomUuid roomToken:(NSString *)roomToken;
+- (void) leaveRoom;
 - (UIView *) getBoardController;
 - (void) callMethod: (NSString *) methodName params:(NSDictionary *) params;
 - (void) unInitEngine;
