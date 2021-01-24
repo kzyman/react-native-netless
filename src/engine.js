@@ -41,6 +41,12 @@ class WhiteBoardEngine {
         await TICBridgeManager.dismissGroup();
     }
     /**
+     * 离开白板房间
+     */
+    async leaveRoom() {
+        await TICBridgeManager.leaveRoom();
+    }
+    /**
      * 释放白板引擎
      */
     async unInitEngine() {
