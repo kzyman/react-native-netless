@@ -16,6 +16,6 @@ Pod::Spec.new do |s|
   s.static_framework = true
   s.swift_version = "4.0"
   s.dependency "React"
-  s.dependency "Whiteboard", "2.11.11"
+  s.dependency "Whiteboard", "2.11.12"
   s.dependency "Masonry"
 end
