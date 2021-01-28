@@ -205,7 +205,7 @@
 }
 // 房间状态变化的回调
 - (void)fireRoomStateChanged:(WhiteRoomState *)modifyState {
-    RCTLogInfo(@"房间状态的变化 %@",modifyState);
+    // RCTLogInfo(@"房间状态的变化 %@",modifyState);
 };
 @end
 
