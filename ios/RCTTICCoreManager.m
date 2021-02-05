@@ -48,14 +48,13 @@
         self.view.frame = CGRectMake(0, 0, width, height);
         self.boardView.frame = CGRectMake(0, 0, width, height);
         [self.view addSubview:self.boardView ];
-      WhiteSdkConfiguration *config = [[WhiteSdkConfiguration alloc] initWithApp:identifier];
-      self.sdk = [[WhiteSDK alloc] initWithWhiteBoardView:self.boardView config:config commonCallbackDelegate:self];
-      _delegate = delegate;
+        WhiteSdkConfiguration *config = [[WhiteSdkConfiguration alloc] initWithApp:identifier];
+        self.sdk = [[WhiteSDK alloc] initWithWhiteBoardView:self.boardView config:config commonCallbackDelegate:self];
+        _delegate = delegate;
     });
 }
 - (void) joinRoom: (NSString *)roomUuid roomToken:(NSString *)roomToken{
   // 加入房间
-    RCTLogInfo(@"roomUuid加入房间: %d", roomUuid);
   dispatch_sync(dispatch_get_main_queue(), ^{
       WhiteRoomConfig *roomConfig = [[WhiteRoomConfig alloc] initWithUuid:roomUuid roomToken:roomToken];
       
@@ -65,7 +64,6 @@
             self.room = room;
             // 在这里给个回调
             // 允许序列化才能使用 undo redo
-              RCTLogInfo(@"roomUuid加入房间成功");
             [self.room disableSerialization:NO];
               NSDictionary *body =@{@"type": @"joinRoomSuccess"};
               [self->_delegate performSelector:@selector(JoinRoomCallback:) withObject:body];
@@ -73,7 +71,6 @@
           } else {
               // 错误处理
             // 在这里给个回调
-              RCTLogInfo(@"roomUuid加入房间失败 %@", error);
               NSDictionary *body =@{@"type": @"joinRoomError", @"msg": error};
               [self->_delegate performSelector:@selector(JoinRoomCallback:) withObject:body];
           }
@@ -83,13 +80,16 @@
 
 
 - (void) leaveRoom {
-  // 加入房间
-    dispatch_sync(dispatch_get_main_queue(), ^{
-      [self.room disconnect:^{
-          //断连成功
-           RCTLogInfo(@"成功退出白板房间");
-      }];    
-    });
+  // 离开房间
+    if (self.room) {
+      dispatch_sync(dispatch_get_main_queue(), ^{
+        [self.room disconnect:^{
+            //断连成功
+            RCTLogInfo(@"成功退出白板房间");
+        }];    
+      });
+    };
+
 }
 
 - (void)setViewMode: (NSString *) mode{
@@ -126,7 +126,6 @@
       // 设置白板工具, 这里包含直线，随意曲线，椭圆,方形, 鼠标等
       WhiteMemberState *memberState = [[WhiteMemberState alloc] init];
       //白板初始状态时，教具默认为 pencil
-        RCTLogInfo(@"设置的数字then %@", [params objectForKey:@"type"]);
       memberState.currentApplianceName = [params objectForKey:@"type"];
 
 
@@ -138,16 +137,12 @@
     } else if ([methodName isEqualToString:@"setBrushColor"]) {
       // 设置刷子颜色
       NSArray *color = [params objectForKey:@"color"];
-//        color = [RCTConvert NSArray: color];
-//        RCTLogInfo(@"rocolorcolorcolor %@", color);
-//        RCTLogInfo(@"打印的colr %@", @[@18, @18]);
       WhiteMemberState *memberState = [[WhiteMemberState alloc] init];
       //白板初始状态时，教具默认为 pencil
         memberState.strokeColor = color;
       [_room setMemberState:memberState];
     } else if ([methodName isEqualToString:@"setBrushThin"]) {
       // 设置刷子粗细
-        RCTLogInfo(@"设置的数字then %d",  [RCTConvert NSNumber: [params objectForKey:@"thin"]]);
       WhiteMemberState *memberState = [[WhiteMemberState alloc] init];
       //白板初始状态时，教具默认为 pencil
         

@@ -72,7 +72,6 @@ RCT_EXPORT_METHOD(unInitEngine  :(RCTPromiseResolveBlock) resolve reject:(RCTPro
 }
 - (void)JoinRoomCallback: (NSDictionary *) body
 {
-  RCTLogInfo(@"加入频道的状态回调 %@", body);
     [self sendEventWithName:[body objectForKey:@"type"] body:body];
 }
 
